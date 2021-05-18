@@ -1,0 +1,26 @@
+{
+  "ver": "0.0.1",
+  "props": {
+    "name": "t99",
+    "description": "xxxx",
+    "owner": {},
+    "version": "0.0.1",
+    "revision": 261,
+    "framework": "vue"
+  },
+  "stats": {
+    "atimeMs": 1613834278089,
+    "mtimeMs": 1613834278089,
+    "ctimeMs": 1613834278089
+  },
+  "options": {
+    "title": "【100 X 100】乘法表",
+    "framework": "vue",
+    "packtool": "vite",
+    "lang": "ts",
+    "mode": "hash",
+    "preferDevice": "Auto"
+  },
+  "dependencies": {},
+  "features": {}
+}

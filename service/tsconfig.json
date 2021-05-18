@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "composite": false,
+    "lib": [ "es2015" ],
+    "target": "es6",
+    "removeComments": false,
+    "sourceMap": false,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "declaration": false,
+    "moduleResolution": "Node",
+    "typeRoots": [
+      "./src/types/",
+      "./node_modules/@types/",
+    ],
+  },
+  "include": [
+    "./src/*"
+  ],
+  "exclude": [
+    "*.json",
+    "*.js",
+  ]
+}
