@@ -41,7 +41,7 @@ app.use(__store);
 // setup router
 const routerMode = (project.options || {}).mode || 'history';
 // @ts-ignore
-const baseUrl = (project.options || {base: '/'}).base || '/';
+const baseUrl = (project.options || { base: '/' }).base || '/';
 const history = routerMode === 'history' ? createWebHistory(baseUrl) : createWebHashHistory(baseUrl);
 const router = createRouter({
   history,

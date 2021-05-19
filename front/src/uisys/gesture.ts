@@ -1,7 +1,5 @@
-import GestureEstimator from './GestureEstimator';
-import GestureDescription from './GestureDescription';
-import { Finger, FingerCurl, FingerDirection } from './FingerDescription';
-import * as Gestures from './gestures/index';
+import GestureEstimator from './handgesture/GestureEstimator';
+import * as Gestures from './handgesture/gestures/index';
 
 declare const handpose: any;
 
