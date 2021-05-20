@@ -10,11 +10,11 @@ export const server: RpcSession = {
     }
     this.connection.sendNotification(name, ...args);
   },
-  resuest(name: string, ...args): any {
+  request(name: string, ...args): any {
     if (!this.connection) {
       return;
     }
-    this.connection.sendNotification(name, ...args);
+    return this.connection.sendRequest(name, ...args);
   }
 };
 
@@ -26,11 +26,11 @@ export const client: RpcSession = {
     }
     this.connection.sendNotification(name, ...args);
   },
-  resuest(name: string, ...args): any {
+  request(name: string, ...args): any {
     if (!this.connection) {
       return;
     }
-    this.connection.sendNotification(name, ...args);
+    return this.connection.sendRequest(name, ...args);
   }
 };
 

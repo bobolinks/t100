@@ -45,7 +45,7 @@ export interface RpcSession {
   /** send notification to browser */
   notify(name: string, ...args: any[]): void;
   /** send request to browser */
-  resuest(name: string, ...args): any;
+  request(name: string, ...args): any;
 }
 
 export interface Logger {
