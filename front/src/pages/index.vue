@@ -13,6 +13,7 @@
     <MulTable class="mul" style="flex: 0 0 0%"></MulTable>
     <video id="inputVideo" :width="resolution.width" :height="resolution.height" autoplay muted playsinline style="flex: 1 1 auto"></video>
     <canvas id="canvas-ass" style="flex: 1 1 auto"></canvas>
+    <img id="qrcode" :src="state.qrcode" />
   </div>
 </template>
 <script>
@@ -30,10 +31,10 @@ export default {
   },
   computed: {
     resolution() {
-      return this.$store.state.sysinfo.resolutions[options.resolution];
+      return options.resolution;
     },
     state() {
-      return this.$store.state.state;
+      return this.$store.state;
     },
   },
   watch: {},
@@ -104,5 +105,12 @@ export default {
   height: 100vh;
   z-index: 100;
   pointer-events: none;
+}
+#qrcode {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 100px;
+  height: 100px;
 }
 </style>

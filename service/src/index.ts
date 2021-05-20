@@ -1,3 +1,4 @@
+import os from 'os';
 import path from 'path';
 import url from 'url';
 import express from 'express';
@@ -6,7 +7,7 @@ import bodyParser from 'body-parser';
 import open from 'open';
 import env from './environment';
 import { logger } from './logger';
-import rpc from'./rpc';
+import rpc from './rpc';
 
 if (!env.debug) {
   process.on('uncaughtException', (err) => {
@@ -18,8 +19,8 @@ if (!env.debug) {
 }
 
 /** modules */
-const album = require('./modules/album');
-const modules = [album];
+const sys = require('./modules/sys');
+const modules = [sys];
 const expr = express();
 
 /** config express */
@@ -35,7 +36,7 @@ expr.all('*', (req, res, next) => {
 });
 
 /** apply express routing rules */
-function applyRoutingRules () {
+function applyRoutingRules() {
   expr.use(bodyParser.urlencoded({ limit: '5mb', extended: false }));
   expr.use(bodyParser.json({ limit: '5mb' }));
 
@@ -63,7 +64,7 @@ function loadModules(app: any) {
 }
 
 // lsof -i:3080
-logger.info('Album deamon initializing...');
+logger.info('T100 deamon initializing...');
 const upgradeEvents = {};
 const app = expr.listen(env.args.port, () => {
   /** init express upgrade hook */
@@ -89,5 +90,15 @@ const app = expr.listen(env.args.port, () => {
   if (env.args.open) {
     open(`http://localhost:${port}/`, { app: 'chrome' });
   }
-  logger.info(`Album deamon started, open link to access : http://localhost:${port}/`);
+  const interfaces = [];
+  Object.values(os.networkInterfaces()).forEach(e => {
+    e.filter((detail) => detail.family === 'IPv4').forEach(detail => {
+      interfaces.push(detail);
+      if (!/^127\./.test(detail.address)) {
+        env.net.address = `http://${detail.address}:${port}/?mode=client`;
+      }
+    })
+  });
+
+  logger.info(`T100 deamon started, open link to access : ${interfaces.map(e => `http://${e.address}:${port}/`).join(', ')}`);
 });

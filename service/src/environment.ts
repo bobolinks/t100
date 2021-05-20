@@ -36,6 +36,9 @@ export const env: Environment = {
   debug: process.env.NODE_ENV !== 'production',
   version,
   platform: <any>os.platform,
+  net: {
+    address: 'http://localhost:5040/?mode=client',
+  },
   paths: {
     bin: args.bin || process.cwd() || __dirname,
     doc: args.doc || (path.join(os.homedir(), 'exh-show')),

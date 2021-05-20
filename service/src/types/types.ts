@@ -1,3 +1,5 @@
+import { MessageConnection } from "vscode-ws-jsonrpc";
+
 export interface Environment {
   /** in debug mode */
   debug: boolean,
@@ -5,6 +7,10 @@ export interface Environment {
   version: string,
   /** platform name */
   platform: 'windows' | 'darwin' | 'linux' | string,
+  /** network info */
+  net: {
+    address: string;
+  },
   /** relative paths */
   paths: {
     /** where the server app is located after 'npm install -g mind-test' */
@@ -34,16 +40,20 @@ export interface RpcModule {
 
 /** rpc session */
 export interface RpcSession {
+  /** connection */
+  connection: MessageConnection;
   /** send notification to browser */
-  notify(name: string, ...args: any[]): void,
+  notify(name: string, ...args: any[]): void;
+  /** send request to browser */
+  resuest(name: string, ...args): any;
 }
 
 export interface Logger {
   debug(...rest: any[]): void,
   info(...rest: any[]): void,
-  warn(...rest: any[]) : void,
+  warn(...rest: any[]): void,
   error(...rest: any[]): void,
   fatal(...rest: any[]): void,
   /** get current log file path */
-  currentFile() : string,
+  currentFile(): string,
 }

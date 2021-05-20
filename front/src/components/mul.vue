@@ -13,11 +13,11 @@ export default {
   },
   props: {
     a: {
-      type: Number,
+      type: [Number, String],
       default: 23,
     },
     b: {
-      type: Number,
+      type: [Number, String],
       default: 65,
     },
   },

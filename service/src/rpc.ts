@@ -2,69 +2,98 @@ import ws from 'ws';
 import { MessageConnection, WebSocketMessageReader, WebSocketMessageWriter, createMessageConnection, ConsoleLogger } from 'vscode-ws-jsonrpc';
 import { RpcModule, RpcSession } from './types/types';
 
-let connection: MessageConnection = undefined;
-export const session : RpcSession = {
+export const server: RpcSession = {
+  connection: null as any as MessageConnection,
   notify(name: string, ...args): void {
-    if (!connection) {
+    if (!this.connection) {
       return;
     }
-    connection.sendNotification(name, ...args);
+    this.connection.sendNotification(name, ...args);
   },
+  resuest(name: string, ...args): any {
+    if (!this.connection) {
+      return;
+    }
+    this.connection.sendNotification(name, ...args);
+  }
 };
 
-export const rpc = {
-  // create the web socket
-  wss: new ws.Server({
-    noServer: true,
-    perMessageDeflate: false,
-  }),
+export const client: RpcSession = {
+  connection: null as any as MessageConnection,
+  notify(name: string, ...args): void {
+    if (!this.connection) {
+      return;
+    }
+    this.connection.sendNotification(name, ...args);
+  },
+  resuest(name: string, ...args): any {
+    if (!this.connection) {
+      return;
+    }
+    this.connection.sendNotification(name, ...args);
+  }
+};
 
-  init(app, modules: Record<string, RpcModule>) {
-    app.onUpgrade('/rpc/message',  (request, socket, head) => {
-      if (connection) {
-        return;
-      }
-      this.wss.handleUpgrade(request, socket, head, (webSocket) => {
-        const socket = {
-          send: (content) => webSocket.send(content, (error) => {
-            if (error) {
-              throw error;
-            }
-          }),
-          onMessage: (cb) => webSocket.on('message', cb),
-          onError: (cb) => webSocket.on('error', cb),
-          onClose: (cb) => {
-            webSocket.on('close', cb);
-          },
-          dispose: () => {
-            webSocket.close();
-          },
-        };
+// create the web socket
+const wss = new ws.Server({
+  noServer: true,
+  perMessageDeflate: false,
+});
 
-        const reader = new WebSocketMessageReader(socket);
-        const writer = new WebSocketMessageWriter(socket);
-
-        const newConnection = createMessageConnection(reader, writer, new ConsoleLogger());
-        webSocket.on('close', () => {
-          connection = undefined;
-        });
-        newConnection.onRequest((method: string, ...params: any[]) => {
-          const [, name, methodName] = /^([^.]+)\.(.+)$/.exec(method);
-          const mo = modules[name];
-          if (!mo) {
-            throw `module ${name} not found`;
+function handleIncoming(app, modules: Record<string, RpcModule>, url, session: RpcSession) {
+  app.onUpgrade(url, (request, socket, head) => {
+    if (session.connection) {
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, (webSocket) => {
+      const socket = {
+        send: (content) => webSocket.send(content, (error) => {
+          if (error) {
+            throw error;
           }
-          const me = mo[methodName];
-          if (!me) {
-            throw `method ${name}.${methodName} not found`;
-          }
-          return me.call(mo, ...params);
-        });
+        }),
+        onMessage: (cb) => webSocket.on('message', cb),
+        onError: (cb) => webSocket.on('error', cb),
+        onClose: (cb) => {
+          webSocket.on('close', cb);
+        },
+        dispose: () => {
+          webSocket.close();
+        },
+      };
 
-        newConnection.listen();
-        connection = newConnection;
+      const reader = new WebSocketMessageReader(socket);
+      const writer = new WebSocketMessageWriter(socket);
+
+      const newConnection = createMessageConnection(reader, writer, new ConsoleLogger());
+      webSocket.on('close', () => {
+        session.connection = undefined;
       });
+      newConnection.onRequest((method: string, ...params: any[]) => {
+        const [, name, methodName] = /^([^.]+)\.(.+)$/.exec(method);
+        const mo = modules[name];
+        if (!mo) {
+          throw `module ${name} not found`;
+        }
+        const me = mo[methodName];
+        if (!me) {
+          throw `method ${name}.${methodName} not found`;
+        }
+        return me.call(mo, ...params);
+      });
+
+      newConnection.listen();
+      session.connection = newConnection;
+
+      console.log(`connected to ${url}`);
     });
+  });
+}
+
+export const rpc = {
+  init(app, modules: Record<string, RpcModule>) {
+    handleIncoming(app, modules, '/rpc/server', server);
+    handleIncoming(app, modules, '/rpc/client', client);
   },
 };
 

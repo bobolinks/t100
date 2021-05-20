@@ -1,6 +1,7 @@
 import { App } from 'vue';
 import { Router, } from "vue-router";
 import { Store } from 'vuex';
+import QRCode from 'qrcode';
 import state from './store';
 import rpcService, { rpc } from './rpc';
 
@@ -12,9 +13,12 @@ export default {
         $rpc: () => rpc,
       },
     });
-    rpcService.init('/rpc/message', ()=> {
-      rpc.request('album.profile').then(e => {
-        console.log(e);
+    rpcService.init(`/rpc/${state.mode}`, () => {
+      rpc.request('sys.env').then(e => {
+        Object.assign(store.state.env, e);
+        QRCode.toDataURL(e.net.address).then(e => {
+          store.state.qrcode = e;
+        });
       });
     });
   },
