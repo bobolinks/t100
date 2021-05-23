@@ -16,7 +16,7 @@ export default {
     rpcService.init(`/rpc/${state.mode}`, () => {
       rpc.request('sys.env').then(e => {
         Object.assign(store.state.env, e);
-        QRCode.toDataURL(e.net.address).then(e => {
+        QRCode.toDataURL(e.net.addresses.student).then(e => {
           store.state.qrcode = e;
         });
       });

@@ -37,7 +37,10 @@ export const env: Environment = {
   version,
   platform: <any>os.platform,
   net: {
-    address: 'http://localhost:5040/?mode=client',
+    addresses: {
+      teacher: 'http://localhost:5040/?mode=teacher',
+      student: 'http://localhost:5040/?mode=student',
+    },
   },
   paths: {
     bin: args.bin || process.cwd() || __dirname,

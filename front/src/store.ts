@@ -1,4 +1,4 @@
-export type Mode = 'server' | 'client';
+export type Mode = 'server' | 'teacher' | 'student';
 
 export const mode = (location.hash.match(/mode=([^&]*)/) || [])[1] || 'server';
 

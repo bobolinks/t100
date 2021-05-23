@@ -9,7 +9,10 @@ export interface Environment {
   platform: 'windows' | 'darwin' | 'linux' | string,
   /** network info */
   net: {
-    address: string;
+    addresses: {
+      teacher: string;
+      student: string;
+    };
   },
   /** relative paths */
   paths: {

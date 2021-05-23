@@ -1,10 +1,12 @@
 /* eslint-disable */
 import index from './pages/index.vue';
-import client from './pages/client.vue';
+import student from './pages/student.vue';
+import teacher from './pages/teacher.vue';
 import { mode } from './store';
 
 export default [
-  { path: '/', redirect: mode === 'client' ? '/client' : '/index' },
+  { path: '/', redirect: mode ? `/${mode}` : '/index' },
   { path: '/index', component: index },
-  { path: '/client', component: client },
+  { path: '/student', component: student },
+  { path: '/teacher', component: teacher },
 ]

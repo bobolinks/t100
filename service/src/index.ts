@@ -95,7 +95,10 @@ const app = expr.listen(env.args.port, () => {
     e.filter((detail) => detail.family === 'IPv4').forEach(detail => {
       interfaces.push(detail);
       if (!/^127\./.test(detail.address)) {
-        env.net.address = `http://${detail.address}:${port}/?mode=client`;
+        env.net.addresses = {
+          teacher: `http://${detail.address}:${port}/?mode=teacher`,
+          student: `http://${detail.address}:${port}/?mode=student`,
+        };
       }
     })
   });
