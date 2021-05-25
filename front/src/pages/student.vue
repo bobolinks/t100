@@ -26,7 +26,7 @@
         <div style="align-items: center; display: flex; flex: 0 0 0%; flex-direction: row; padding: 0.5em">
           <i class="icon-edit" style="margin-right: 0.5em"></i>
           <form @submit="onSubmit" style="flex: 1 1 auto">
-            <input type="text" placeholder="在这里输入命令哦" />
+            <input type="text" placeholder="在这里输入命令哦" @keydown="onkey" />
           </form>
         </div>
       </div>
@@ -34,6 +34,7 @@
   </div>
 </template>
 <script>
+import Scenes from '../scenes/index';
 export default {
   components: {},
   data() {
@@ -56,18 +57,43 @@ export default {
   methods: {
     onSubmit(e) {
       e.preventDefault();
-      if (!e.target.children[0].value) {
+      const cmdline = e.target.children[0].value;
+      if (!cmdline) {
         return;
       }
+      e.target.children[0].value = '';
       this.scripts.push({
         type: 'action',
-        content: e.target.children[0].value,
+        content: cmdline,
         time: new Date(),
       });
-      e.target.children[0].value = '';
+      if (/^start\s(\w+)$/.test(cmdline)) {
+        const [, name] = cmdline.match(/^start\s(\w+)$/);
+        this.$rpc.request('relay.input', '', 'scene.start', name).then((e) => {
+          this.scripts.push({
+            type: 'message',
+            content: e,
+            time: new Date(),
+          });
+          this.startScene(name);
+        });
+      }
       this.$nextTick(() => {
         document.querySelector('.item:last-child').scrollIntoView(false);
       });
+    },
+    onkey(e) {
+      if (this.scene) {
+        this.scene.script.input(e.key);
+        e.preventDefault();
+      }
+    },
+    startScene(name) {
+      if (this.scene) {
+        this.scene.dispose();
+      }
+      const Scene = Scenes[name];
+      this.scene = new Scene();
     },
   },
   mounted() {

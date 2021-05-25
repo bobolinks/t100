@@ -20,7 +20,8 @@ if (!env.debug) {
 
 /** modules */
 const sys = require('./modules/sys');
-const modules = [sys];
+const relay = require('./modules/relay');
+const modules = [sys, relay];
 const expr = express();
 
 /** config express */

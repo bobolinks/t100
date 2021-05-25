@@ -5,8 +5,8 @@ import teacher from './pages/teacher.vue';
 import { mode } from './store';
 
 export default [
-  { path: '/', redirect: mode ? `/${mode}` : '/index' },
-  { path: '/index', component: index },
+  { path: '/', redirect: mode ? `/${mode}` : '/server' },
+  { path: '/server', component: index },
   { path: '/student', component: student },
   { path: '/teacher', component: teacher },
 ]

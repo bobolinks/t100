@@ -18,6 +18,10 @@ export const options = {
     width: 704,
     height: 288
   },
+  screen: {
+    width: 2048,
+    height: 1080,
+  }
 };
 
 export type Options = typeof options;

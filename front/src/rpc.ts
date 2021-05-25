@@ -20,9 +20,9 @@ export interface TyRpcConnection {
 
 interface TyRpcConnectionEx extends TyRpcConnection {
   /** rpc 消息通道 */
-  rawConnection: MessageConnection | undefined,
+  rawConnection: MessageConnection | undefined;
   /** 订阅清单 */
-  handlers: Record<string, Array<{ target: any, handler: TyRpcHandler }>>,
+  handlers: Record<string, Array<{ target: any, handler: TyRpcHandler }>>;
 }
 
 export const rpc: TyRpcConnectionEx = {
@@ -33,7 +33,7 @@ export const rpc: TyRpcConnectionEx = {
     if (!this.rawConnection) {
       throw 'disconnected';
     }
-    return this.rawConnection.sendRequest(method, ...(args||[]));
+    return this.rawConnection.sendRequest(method, ...(args || []));
   },
   /** 订阅事件 */
   describe(method: string, handler: TyRpcHandler, target: any): void {
@@ -51,7 +51,7 @@ export const rpc: TyRpcConnectionEx = {
         this.handlers[method] = nls;
       }
     }
-  }
+  },
 };
 
 const rpcService = {
@@ -84,8 +84,17 @@ const rpcService = {
           const ls = rpc.handlers[method];
           if (ls) {
             ls.forEach(it => {
-              it.handler.call(it.target, ...(params||[]));
+              it.handler.call(it.target, ...(params || []));
             })
+          }
+        });
+        connection.onRequest((method: string, ...params: any[]): any => {
+          const ls = rpc.handlers[method];
+          if (ls) {
+            // only return first result
+            for (const it of ls) {
+              return it.handler.call(it.target, ...(params || []));
+            }
           }
         });
         rpc.rawConnection = connection;

@@ -18,7 +18,7 @@ export const server: RpcSession = {
   }
 };
 
-export const client: RpcSession = {
+export const student: RpcSession = {
   connection: null as any as MessageConnection,
   notify(name: string, ...args): void {
     if (!this.connection) {
@@ -93,7 +93,7 @@ function handleIncoming(app, modules: Record<string, RpcModule>, url, session: R
 export const rpc = {
   init(app, modules: Record<string, RpcModule>) {
     handleIncoming(app, modules, '/rpc/server', server);
-    handleIncoming(app, modules, '/rpc/client', client);
+    handleIncoming(app, modules, '/rpc/student', student);
   },
 };
 
