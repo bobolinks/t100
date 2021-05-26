@@ -8,7 +8,10 @@ export default class Numbers extends ShowBase {
   constructor(screen: Is.Screen) {
     super({
       num: {
-        matchers: /\d/,
+        matchers: {
+          name: 'value',
+          exp: /\d/,
+        },
         code: `num.setValue(value);`
       },
     }, screen);

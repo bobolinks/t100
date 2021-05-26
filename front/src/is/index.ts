@@ -10,7 +10,7 @@ export namespace Is {
   /** expr matcher */
   export interface Matcher {
     exp: RegExp;
-    name?: string;
+    name: string;
   }
 
   /** runtime context */
@@ -23,32 +23,28 @@ export namespace Is {
     /** default is null */
     description?: string;
     /** default is key of Recore<key, Command> */
-    matchers?: string | RegExp | Matcher | Array<string | RegExp | Matcher>;
+    matchers?: string | Matcher | Array<string | Matcher>;
     /** implementation, this === ScriptContext */
     code: string;
   }
   export type Script = Record<string, Command>;
 
   /** patterns */
-  export type Pattern = { description?: string, matchers: Array<Matcher> };
+  export type Pattern = { description?: string, matchers: Array<string | Matcher> };
   export type Patterns = Record<string, Pattern>;
-  export function matchers(command: Command): Array<Matcher> {
-    const matchers: Array<Matcher> = [];
+  export function matchers(command: Command): Array<string | Matcher> {
+    const matchers: Array<string | Matcher> = [];
     if (command.matchers) {
       if (Array.isArray(command.matchers)) {
         matchers.push(...command.matchers.map(e => {
-          if (isRegexp(e)) {
-            return { exp: ensureStartMatch(command.matchers as RegExp) };
-          } else if (typeof e !== 'string') {
+          if (typeof e !== 'string') {
             return {
               name: (e as Matcher).name,
               exp: ensureStartMatch((e as Matcher).exp)
             };
           }
-          return { exp: new RegExp(`^${e}$`) };
+          return e;
         }));
-      } else if (isRegexp(command.matchers)) {
-        matchers.push({ exp: ensureStartMatch(command.matchers as RegExp) });
       } else {
         matchers.push(command.matchers as Matcher);
       }
@@ -62,7 +58,7 @@ export namespace Is {
       const mats = matchers(sco);
       if (sco.matchers) {
       } else {
-        mats.push({ exp: new RegExp(`^${key}$`) });
+        mats.push(key);
       }
       pats[key] = { description: sco.description, matchers: mats };
     }
@@ -147,15 +143,26 @@ export namespace Is {
             }
             continue;
           }
-          const mr = matcher.exp.exec(token);
-          if (mr) {
-            token = token.substring(mr[0].length);
-            if (matcher.name) {
-              vars.push(mr[0]);
+          if (typeof matcher === 'string') {
+            if (matcher.startsWith(token)) {
+              token = '';
+            } else if (token.startsWith(matcher)) {
+              token = token.substring(matcher.length);
+            } else {
+              failed = true;
+              break;
             }
           } else {
-            failed = true;
-            break;
+            const mr = matcher.exp.exec(token);
+            if (mr) {
+              token = token.substring(mr[0].length);
+              if (matcher.name) {
+                vars.push(mr[0]);
+              }
+            } else {
+              failed = true;
+              break;
+            }
           }
         }
         if (!failed) {
@@ -344,7 +351,7 @@ export namespace Is {
       this.screen = screen;
       this.script = {};
       for (const [name, it] of Object.entries(script)) {
-        const args = matchers(it).filter(e => e.name).map(e => e.name);
+        const args = matchers(it).filter(e => typeof e !== 'string').map(e => (e as Matcher).name);
         this.script[name] = Object.assign({}, it, {
           implementation: new Function(args as any, `with(this) { ${it.code} }`),
         }) as any;
