@@ -6,7 +6,7 @@ export function loadModule() {
 }
 
 export default <RpcModule>{
-  input(keypath: string, command: string, ...args: any[]): any {
+  input(command: string, ...args: any[]): any {
     return server.request(command, args);
   },
 };

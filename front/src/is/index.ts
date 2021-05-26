@@ -2,126 +2,124 @@ const H5Image = Image;
 
 /** interative script */
 export namespace Is {
-  /** key path[from root to selected] */
-  export type Keypath = string;
+  export enum Role {
+    Student = 0,
+    Master = 1,
+  };
+
   /** expr matcher */
   export interface Matcher {
     exp: RegExp;
-    name: string;
-  }
-  /** patterns */
-  export type Pattern = { path: Keypath, matchers: Array<string | RegExp | Matcher>, value: Is.Scope };
-  export type Patterns = Array<Pattern>;
-  export type Result = { code?: number, error?: string };
-  /** script scope */
-  export interface Scope {
-    /** default is public */
-    type?: 'public' | 'private';
-    /** target */
-    target?: 'none' | 'self';
-    /** default is key of Recore<key, Scope> */
     name?: string;
+  }
+
+  /** runtime context */
+  export interface ScriptContext {
+    [key: string]: any;
+  }
+
+  /** script command */
+  export interface Command {
     /** default is null */
     description?: string;
-    /** default is key of Recore<key, Scope> */
+    /** default is key of Recore<key, Command> */
     matchers?: string | RegExp | Matcher | Array<string | RegExp | Matcher>;
-    /** instruction list in this scoped area */
-    instructions?: Scopes;
-    /** command */
-    command: string;
+    /** implementation, this === ScriptContext */
+    code: string;
   }
-  /** scope list */
-  export type Scopes = Record<string, Scope>;
-  /** scope path from keypath */
-  export function scopes(scope: Scope, keypath?: Keypath): Array<{ path: Keypath, name: string, value: Is.Scope }> {
-    const ls: Array<{ path: Keypath, name: string, value: Is.Scope }> = [{ path: keypath || '', name: '', value: scope }];
-    if (!keypath) {
-      return ls;
-    }
-    const keys = [];
-    const names = keypath.split('.');
-    let node = scope;
-    for (const name of names) {
-      node = (node.instructions || {})[name];
-      if (!node) {
-        throw `scope[${keypath}] not found`;
-      }
-      keys.push(name);
-      ls.push({ path: keys.join('.'), name, value: node });
-    }
-    return ls;
-  }
-  /** list all patterns from keypath */
-  export function patterns(scope: Scope, keypath?: Keypath): Patterns {
-    const scopes = Is.scopes(scope, keypath);
-    const pats: Is.Patterns = [];
-    const its = [...scopes].reverse();
-    for (const it of its) {
-      if (!it.value.instructions) continue;
-      for (const [key, sco] of Object.entries(it.value.instructions)) {
-        const matchers: Array<string | RegExp | Matcher> = [];
-        if (sco.matchers) {
-          if (Array.isArray(sco.matchers)) {
-            matchers.push(...sco.matchers.map(e => {
-              if (isRegexp(e)) {
-                return ensureStartMatch(sco.matchers as RegExp);
-              } else if (typeof e !== 'string') {
-                return {
-                  name: (e as Matcher).name,
-                  exp: ensureStartMatch((e as Matcher).exp)
-                };
-              }
-              return e;
-            }));
-          } else if (isRegexp(sco.matchers)) {
-            matchers.push(ensureStartMatch(sco.matchers as RegExp));
-          } else {
-            matchers.push(sco.matchers);
+  export type Script = Record<string, Command>;
+
+  /** patterns */
+  export type Pattern = { description?: string, matchers: Array<Matcher> };
+  export type Patterns = Record<string, Pattern>;
+  export function matchers(command: Command): Array<Matcher> {
+    const matchers: Array<Matcher> = [];
+    if (command.matchers) {
+      if (Array.isArray(command.matchers)) {
+        matchers.push(...command.matchers.map(e => {
+          if (isRegexp(e)) {
+            return { exp: ensureStartMatch(command.matchers as RegExp) };
+          } else if (typeof e !== 'string') {
+            return {
+              name: (e as Matcher).name,
+              exp: ensureStartMatch((e as Matcher).exp)
+            };
           }
-        } else {
-          matchers.push(key);
-        }
-        pats.push({ path: `${it.path}.${key}`, matchers, value: sco });
+          return { exp: new RegExp(`^${e}$`) };
+        }));
+      } else if (isRegexp(command.matchers)) {
+        matchers.push({ exp: ensureStartMatch(command.matchers as RegExp) });
+      } else {
+        matchers.push(command.matchers as Matcher);
       }
-      if (it.value.type === 'private') {
-        break;
+    }
+    return matchers;
+  }
+  /** converts script to patterns*/
+  export function toPatterns(script: Script): Patterns {
+    const pats: Is.Patterns = {};
+    for (const [key, sco] of Object.entries(script)) {
+      const mats = matchers(sco);
+      if (sco.matchers) {
+      } else {
+        mats.push({ exp: new RegExp(`^${key}$`) });
       }
+      pats[key] = { description: sco.description, matchers: mats };
     }
     return pats;
   }
+  export function stringifyPatterns(patterns: Patterns): string {
+    return JSON.stringify(patterns, function (key, value) {
+      if (key === 'matchers' && Array.isArray(value)) {
+        return value.map(e => {
+          const ma = e as Matcher;
+          return `[!e-${ma.name || ''}-${ma.exp.flags}]${ma.exp.source}`;
+        })
+      }
+      return value;
+    });
+  }
+  export function parsePatterns(str: string): Patterns {
+    return JSON.parse(str, function (key, value) {
+      if (key === 'matchers' && Array.isArray(value)) {
+        return value.map(e => {
+          const [, name, flags, source] = /^\[!e-([^-]*)-([^\]]*)\](.+)$/.exec(e) || [];
+          return {
+            name,
+            exp: new RegExp(source, flags),
+          };
+        })
+      }
+      return value;
+    });
+  }
 
+  /**
+   *******************************
+   */
   type CharCode = number;
-  type PatternWithResult = {
-    pattern: Pattern | null;
-    vars: Array<string>;
+  export type FnCommit = (name: string, args: any[]) => any;
+  type InputResult = {
+    action: 'clear' | 'default';
+    sugesstions?: Array<string>;
   };
 
-  export type Executor = (keypath: Keypath, node: Scope, args: any[]) => Result | Promise<Result>;
-  /** script */
-  export class Script {
-    private root: Scope;
-    private stack: Array<{ path: Keypath, name: string, value: Is.Scope }>;
+  export class Ternimator {
     private line: Array<CharCode>;
     private patterns: Patterns;
-    private executor: Executor;
-    constructor(root: Scope, executor: Executor) {
-      this.root = root;
-      this.stack = scopes(this.root);
+    private commit: FnCommit;
+    constructor(patterns: Patterns, commit: FnCommit) {
       this.line = [];
-      this.patterns = patterns(root);
-      this.executor = executor;
+      this.patterns = patterns;
+      this.commit = commit;
     }
-    reshape() {
-      this.patterns = patterns(this.stack[this.stack.length - 1].value);
-    }
-    pop() {
-      if (this.stack.length > 1) {
-        this.stack.pop();
-      }
-    }
-    input(char: CharCode): Array<string> {
-      if (char === 10) {
-        // is \n
+    input(char: CharCode): InputResult {
+      const rs: InputResult = {
+        action: 'default',
+        sugesstions: [],
+      };
+      if (char === 13) {
+        // is \r
       } else if (char === 8) {
         // is \b
         if (this.line.length) {
@@ -132,12 +130,11 @@ export namespace Is {
       }
       const line = this.line.map(e => String.fromCharCode(e)).join('');
 
-      const ls = [];
-      let fullMatched: PatternWithResult = {
-        pattern: null,
+      let fullMatched: any = {
+        name: null,
         vars: []
       };
-      for (const it of this.patterns) {
+      for (const [name, it] of Object.entries(this.patterns)) {
         let token = line;
         let failed = false;
         const vars = [];
@@ -148,68 +145,38 @@ export namespace Is {
             if (failed) {
               break;
             }
-            vars.push(matcherToString(matcher));
             continue;
           }
-          if (typeof matcher === 'string') {
-            if (matcher.startsWith(token)) {
-              vars.push(matcher);
-              if (matcher.length !== token.length) {
-                // touch the end
-                token = '';
-                break;
-              }
-              // touch the end
-              token = '';
-            } else if (token.startsWith(matcher)) {
-              token = token.substring(matcher.length);
-              vars.push(matcher);
-            } else {
-              failed = true;
-              break;
-            }
-          } else if (isRegexp(matcher)) {
-            const mr = (matcher as RegExp).exec(token);
-            if (mr) {
-              token = token.substring(mr[0].length);
+          const mr = matcher.exp.exec(token);
+          if (mr) {
+            token = token.substring(mr[0].length);
+            if (matcher.name) {
               vars.push(mr[0]);
-            } else {
-              failed = true;
-              break;
             }
           } else {
-            const mr = (matcher as Matcher).exp.exec(token);
-            if (mr) {
-              token = token.substring(mr[0].length);
-              vars.push(mr[0]);
-            } else {
-              failed = true;
-              break;
-            }
+            failed = true;
+            break;
           }
         }
         if (!failed) {
-          ls.push(vars.join(''));
-          if (!fullMatched.pattern && processed === it.matchers.length && !token) {
-            fullMatched.pattern = it;
+          rs.sugesstions?.push(vars.join(''));
+          if (!fullMatched.name && processed === it.matchers.length && !token) {
+            fullMatched.name = name;
             fullMatched.vars = vars;
           }
         }
       }
 
-      if (char === 10) {
+      if (char === 13) {
+        this.line = [];
         // excute
-        if (fullMatched.pattern) {
-          this.executor(fullMatched.pattern.path, fullMatched.pattern.value, fullMatched.vars);
-          if (fullMatched.pattern.value.target === 'self') {
-            this.stack = scopes(this.root, fullMatched.pattern.path);
-            this.reshape();
-            return [];
-          }
+        if (fullMatched.name) {
+          rs.action = 'clear';
+          this.commit(fullMatched.name, fullMatched.vars);
         }
       }
 
-      return ls;
+      return rs;
     }
   }
 
@@ -253,7 +220,7 @@ export namespace Is {
       this.element.style.top = typeof rect.top === 'number' ? `${rect.top}px` : rect.top;
       this.element.style.width = typeof rect.width === 'number' ? `${rect.width}px` : rect.width;
       this.element.style.height = typeof rect.height === 'number' ? `${rect.height}px` : rect.height;
-      this.element.setAttribute('name', name);
+      this.element.setAttribute('id', name);
     }
   }
 
@@ -291,16 +258,19 @@ export namespace Is {
     }
   };
 
+  interface ScreenContext extends ScriptContext {
+    [key: string]: Element;
+  };
   export class Screen extends HTMLDivElement {
     shadow: ShadowRoot;
-    shapes: Array<Element>;
+    context: ScreenContext;
     body: HTMLBodyElement;
     actived: Element | undefined;
     expectedSize: Size | undefined;
     constructor() {
       super();
       this.shadow = this.attachShadow({ mode: 'open' });
-      this.shapes = [];
+      this.context = {};
       this.body = document.createElement('body');
       this.shadow.appendChild(this.body);
       new ResizeObserver(() => {
@@ -327,11 +297,7 @@ export namespace Is {
       this.resize();
     }
     getShape(name: string): Element | undefined {
-      const e = this.shadow.ownerDocument.getElementsByName(name);
-      if (e.length !== 1) {
-        throw '';
-      }
-      return this.shapes.find(shape => shape.element === e[0]);
+      return this.context[name];
     }
     activeShape(name: string) {
       const e = this.getShape(name);
@@ -346,15 +312,20 @@ export namespace Is {
           this.removeShape(shape);
         };
       }
-      this.shapes.push(shape);
+      const id = shape.element.getAttribute('id');
+      if (!id) {
+        throw '';
+      }
+      this.context[id] = shape;
       this.body.appendChild(shape.element);
     }
     removeShape(shape: Element) {
-      this.body.removeChild(shape.element);
-      const index = this.shapes.indexOf(shape);
-      if (index !== -1) {
-        this.shapes.splice(index, 1);
+      const id = shape.element.getAttribute('id');
+      if (!id) {
+        throw '';
       }
+      this.body.removeChild(shape.element);
+      delete this.context[id];
     }
     cleanup() {
       this.body.childNodes.forEach(e => this.body.removeChild(e));
@@ -365,16 +336,21 @@ export namespace Is {
    *******************************
    */
   export class Program {
-    script: Script;
-    screen: Screen | undefined;
-    constructor(script: Scope, screen?: Screen) {
-      this.script = new Script(script, this.onExecute.bind(this));
+    script: Record<string, Omit<Command, 'code'> & {
+      implementation(...args: any[]): any;
+    }>;
+    screen: Screen;
+    constructor(script: Script, screen: Screen) {
       this.screen = screen;
+      this.script = {};
+      for (const [name, it] of Object.entries(script)) {
+        const args = matchers(it).filter(e => e.name).map(e => e.name);
+        this.script[name] = Object.assign({}, it, {
+          implementation: new Function(args as any, `with(this) { ${it.code} }`),
+        }) as any;
+      }
     }
-    onExecute(keypath: Keypath, node: Scope, args: any[]) {
-      return {};
-    }
-    setupStyle(css: string) {
+    launch(css: string) {
       let style = document.getElementById('screen-style');
       if (!style) {
         style = document.createElement('style');
@@ -382,6 +358,16 @@ export namespace Is {
         this.screen?.shadow.appendChild(style);
       }
       style.innerHTML = css;
+    }
+    execute(name: string, args: any[]): any {
+      const node = this.script[name];
+      if (!node) {
+        throw `Command[${name}] not found!`;
+      }
+      return node.implementation.call(this.screen.context, args);
+    }
+    patterns() {
+      return toPatterns(this.script as any);
     }
   }
 };

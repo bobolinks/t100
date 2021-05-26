@@ -26,7 +26,7 @@
         <div style="align-items: center; display: flex; flex: 0 0 0%; flex-direction: row; padding: 0.5em">
           <i class="icon-edit" style="margin-right: 0.5em"></i>
           <form @submit="onSubmit" style="flex: 1 1 auto">
-            <input type="text" placeholder="在这里输入命令哦" @keydown="onkey" />
+            <input type="text" placeholder="在这里输入命令哦" @keyup="onkey" />
           </form>
         </div>
       </div>
@@ -34,7 +34,7 @@
   </div>
 </template>
 <script>
-import Scenes from '../scenes/index';
+import { Is } from '../is/index';
 export default {
   components: {},
   data() {
@@ -67,15 +67,24 @@ export default {
         content: cmdline,
         time: new Date(),
       });
-      if (/^start\s(\w+)$/.test(cmdline)) {
-        const [, name] = cmdline.match(/^start\s(\w+)$/);
-        this.$rpc.request('relay.input', '', 'scene.start', name).then((e) => {
+      if (cmdline === 'exit') {
+        this.$rpc.request('relay.input', 'scene.stop').then((e) => {
           this.scripts.push({
             type: 'message',
-            content: e,
+            content: `Stop succesfully!`,
             time: new Date(),
           });
-          this.startScene(name);
+          this.term = null;
+        });
+      } else if (/^start\s(\w+)$/.test(cmdline)) {
+        const [, name] = cmdline.match(/^start\s(\w+)$/);
+        this.$rpc.request('relay.input', 'scene.start', name).then((e) => {
+          this.scripts.push({
+            type: 'message',
+            content: `Start succesfully!`,
+            time: new Date(),
+          });
+          this.startScene(Is.parsePatterns(e));
         });
       }
       this.$nextTick(() => {
@@ -83,17 +92,24 @@ export default {
       });
     },
     onkey(e) {
-      if (this.scene) {
-        this.scene.script.input(e.key);
-        e.preventDefault();
+      if (this.term) {
+        const rs = this.term.input(e.keyCode);
+        if (rs.action === 'clear') {
+          e.target.value = '';
+          e.preventDefault();
+        }
       }
     },
-    startScene(name) {
-      if (this.scene) {
-        this.scene.dispose();
-      }
-      const Scene = Scenes[name];
-      this.scene = new Scene();
+    startScene(patterns) {
+      this.term = new Is.Ternimator(patterns, (name, args) => {
+        this.$rpc.request('relay.input', 'scene.execute', name, args).then((e) => {
+          this.scripts.push({
+            type: 'message',
+            content: e,
+            time: new Date(),
+          });
+        });
+      });
     },
   },
   mounted() {
@@ -187,6 +203,7 @@ export default {
   background-size: 20px 20px;
   background-position: -10px calc(100% + 16px), 0 calc(100% - 4px);
   width: 100%;
+  letter-spacing: 0.2em;
 }
 
 .scripts {

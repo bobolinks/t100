@@ -11,6 +11,7 @@ import ClrNumber from '../components/number.vue';
 import MulTable from '../components/mul.vue';
 import uisys from '../uisys/index';
 import { options } from '../store';
+import { Is } from '../is/index';
 import Scenes from '../scenes/index';
 export default {
   components: {
@@ -32,11 +33,20 @@ export default {
   methods: {
     startScene(name) {
       if (this.scene) {
+        this.$rpc.undescribe(this.scene);
         this.scene.dispose();
       }
       const Scene = Scenes[name];
       this.scene = new Scene($('#scene'));
-      return 'Start succesfully!';
+
+      this.$rpc.undescribe(this);
+      this.$rpc.describe('scene.execute', this.scene.execute, this.scene);
+      this.$rpc.describe('scene.stop', () => {
+        this.$rpc.undescribe(this);
+        this.$rpc.describe('scene.start', this.startScene, this);
+      });
+
+      return Is.stringifyPatterns(this.scene.patterns());
     },
   },
   mounted() {
@@ -46,7 +56,7 @@ export default {
       uisys.start();
     };
     uisys.init(this.$store.state, video, cavas);
-    this.$rpc.describe('scene.start', this.startScene);
+    this.$rpc.describe('scene.start', this.startScene, this);
   },
   unmounted() {
     uisys.stop();
