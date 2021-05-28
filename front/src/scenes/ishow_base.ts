@@ -6,29 +6,28 @@ export default class extends Is.Program {
   constructor(script: Is.Script, screen: Is.Screen) {
     super(script, screen);
     screen.setupExpectedSize(options.screen);
-    screen.addShape(new Is.Shapes.Rectangle("show",
+    screen.addElement(new Is.Elements.Rectangle("show",
       {
-        left: 0,
-        top: 0,
-        height: options.screen.height,
-        width: options.screen.width / 2
-      },
-      {
+        left: '0',
+        top: '0',
+        height: `${options.screen.height}px`,
+        width: `${options.screen.width / 2}px`,
         borderRight: '1px solid #f2f2f2',
       }
     ),
     );
-    screen.addShape(new Is.Shapes.Rectangle("ani",
+    screen.addElement(new Is.Elements.Rectangle("ani",
       {
-        left: options.screen.width / 2,
-        top: 0,
-        height: options.screen.height,
-        width: options.screen.width / 2
+        left: `${options.screen.width / 2}px`,
+        top: '0',
+        height: `${options.screen.height}px`,
+        width: `${options.screen.width / 2}px`
       },
     ),
     );
   }
   dispose() {
     rpc.undescribe(this);
+    super.dispose();
   }
 };

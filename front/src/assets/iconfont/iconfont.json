@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "1572731",
+      "name": "错误",
+      "font_class": "error",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "2596781",
+      "name": "停止",
+      "font_class": "stop",
+      "unicode": "e76b",
+      "unicode_decimal": 59243
+    },
+    {
+      "icon_id": "12195603",
+      "name": "start flag",
+      "font_class": "start",
+      "unicode": "eccd",
+      "unicode_decimal": 60621
+    },
+    {
       "icon_id": "1223877",
       "name": "exit",
       "font_class": "exit",

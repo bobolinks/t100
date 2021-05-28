@@ -11,8 +11,8 @@ import ClrNumber from '../components/number.vue';
 import MulTable from '../components/mul.vue';
 import uisys from '../uisys/index';
 import { options } from '../store';
-import { Is } from '../is/index';
 import Scenes from '../scenes/index';
+import NorDic from '../util/nordic';
 export default {
   components: {
     ClrNumber,
@@ -38,15 +38,17 @@ export default {
       }
       const Scene = Scenes[name];
       this.scene = new Scene($('#scene'));
+      this.scene.launch('');
 
       this.$rpc.undescribe(this);
+      this.$rpc.describe('scene.start', this.startScene, this);
       this.$rpc.describe('scene.execute', this.scene.execute, this.scene);
       this.$rpc.describe('scene.stop', () => {
         this.$rpc.undescribe(this);
         this.$rpc.describe('scene.start', this.startScene, this);
       });
 
-      return Is.stringifyPatterns(this.scene.patterns());
+      return NorDic.encode(this.scene.patterns());
     },
   },
   mounted() {

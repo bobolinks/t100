@@ -23,22 +23,25 @@
             <label style="flex: 1 1 auto">{{ item.content }}</label>
           </div>
         </div>
-        <div style="align-items: center; display: flex; flex: 0 0 0%; flex-direction: row; padding: 0.5em">
-          <i class="icon-edit" style="margin-right: 0.5em"></i>
-          <form @submit="onSubmit" style="flex: 1 1 auto">
-            <input type="text" placeholder="在这里输入命令哦" @keyup="onkey" />
-          </form>
-        </div>
+        <form class="input-form" @submit="onSubmit" style="flex: 0 0 0%">
+          <span class="input-item sugestion">{{ inputSugestion }}</span>
+          <div style="align-items: center; display: flex; flex-direction: row">
+            <i class="icon-edit" style="flex: 0 0 0%; margin: 0 0.4em"></i>
+            <input class="input-item" id="cmd-txt" type="text" placeholder="在这里输入命令哦" @keyup="onkey" style="flex: 1 1 auto" />
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </template>
 <script>
 import { Is } from '../is/index';
+import NorDic from '../util/nordic';
 export default {
   components: {},
   data() {
     return {
+      inputSugestion: '...',
       tip: 'tip',
       scripts: [
         {
@@ -57,17 +60,14 @@ export default {
   methods: {
     onSubmit(e) {
       e.preventDefault();
-      const cmdline = e.target.children[0].value;
+      const cmdline = $('#cmd-txt').value;
       if (!cmdline) {
         return;
       }
-      e.target.children[0].value = '';
-      this.scripts.push({
-        type: 'action',
-        content: cmdline,
-        time: new Date(),
-      });
+      $('#cmd-txt').value = '';
+      let action = 'action';
       if (cmdline === 'exit') {
+        action = 'exit';
         this.$rpc.request('relay.input', 'scene.stop').then((e) => {
           this.scripts.push({
             type: 'message',
@@ -77,6 +77,7 @@ export default {
           this.term = null;
         });
       } else if (/^start\s(\w+)$/.test(cmdline)) {
+        action = 'start';
         const [, name] = cmdline.match(/^start\s(\w+)$/);
         this.$rpc.request('relay.input', 'scene.start', name).then((e) => {
           this.scripts.push({
@@ -84,30 +85,39 @@ export default {
             content: `Start succesfully!`,
             time: new Date(),
           });
-          this.startScene(Is.parsePatterns(e));
+          this.startScene(NorDic.decode(e));
         });
+      } else if (!this.term) {
+        return;
+      } else if (!this.term.excute(cmdline)) {
+        action = 'error';
       }
+      this.scripts.push({
+        type: action,
+        content: cmdline,
+        time: new Date(),
+      });
+
       this.$nextTick(() => {
         document.querySelector('.item:last-child').scrollIntoView(false);
       });
     },
     onkey(e) {
       if (this.term) {
-        const rs = this.term.input(e.keyCode);
-        if (rs.action === 'clear') {
-          e.target.value = '';
-          e.preventDefault();
-        }
+        const rs = this.term.input($('#cmd-txt').value);
+        this.inputSugestion = rs.sugesstions?.length ? rs.sugesstions[0] : '...';
       }
     },
     startScene(patterns) {
       this.term = new Is.Ternimator(patterns, (name, args) => {
         this.$rpc.request('relay.input', 'scene.execute', name, args).then((e) => {
-          this.scripts.push({
-            type: 'message',
-            content: e,
-            time: new Date(),
-          });
+          if (e) {
+            this.scripts.push({
+              type: 'message',
+              content: e,
+              time: new Date(),
+            });
+          }
         });
       });
     },
@@ -134,7 +144,6 @@ export default {
   font-family: 'iconfont' !important;
   color: #ff6600;
   font-size: 1.8em;
-  cursor: pointer;
 }
 
 .toolbar {
@@ -146,6 +155,7 @@ export default {
 
 .toolbar i {
   color: white;
+  cursor: pointer;
 }
 
 .toolbar .scorebar {
@@ -192,20 +202,6 @@ export default {
   letter-spacing: 0.2em;
 }
 
-.actpane input {
-  border: none;
-  outline: none;
-  display: inline-block;
-  font-size: 2em;
-  font-family: longcang;
-  padding-bottom: 8px;
-  background: radial-gradient(circle at 10px -7px, transparent 8px, #ffcc99 8px, #ffcc99 9px, transparent 9px) repeat-x, radial-gradient(circle at 10px 27px, transparent 8px, #ffcc99 8px, #ffcc99 9px, transparent 9px) repeat-x;
-  background-size: 20px 20px;
-  background-position: -10px calc(100% + 16px), 0 calc(100% - 4px);
-  width: 100%;
-  letter-spacing: 0.2em;
-}
-
 .scripts {
   padding: 0 0.5em;
   color: #222;
@@ -224,7 +220,7 @@ export default {
 }
 
 .scripts .item i {
-  color: #222;
+  color: #666;
   font-size: 1em;
   margin: 0.5em;
   font-style: normal;
@@ -238,5 +234,45 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.input-form {
+  position: relative;
+  background: radial-gradient(circle at 10px -7px, transparent 8px, #ffcc99 8px, #ffcc99 9px, transparent 9px) repeat-x, radial-gradient(circle at 10px 27px, transparent 8px, #ffcc99 8px, #ffcc99 9px, transparent 9px) repeat-x;
+  background-size: 20px 20px;
+  background-position: -10px calc(100% + 16px), 0 calc(100% - 4px);
+  border-top: 1px solid #f2f2f2;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5em;
+}
+
+.input-form .icon-edit {
+  font-size: 1.2em;
+}
+
+.input-form .input-item {
+  border: none;
+  outline: none;
+  display: inline-block;
+  font-family: longcang;
+  padding-bottom: 8px;
+  width: 100%;
+  letter-spacing: 0.2em;
+  background: transparent;
+}
+
+.input-form .sugestion {
+  font-size: 1.2em;
+  min-height: 1.2em;
+  margin-left: 2.2em;
+  user-select: none;
+  pointer-events: none;
+  color: #aaa;
+}
+
+.input-form input {
+  font-size: 2em;
+  color: #888;
 }
 </style>
