@@ -1,5 +1,5 @@
 import { Is } from '../../is/index';
-import { Key } from '../shapes/keyboard';
+import { ShapeKey } from '../shapes/keyboard';
 
 const keysLayout = [
   [['`', '~'], ['1', '!'], ['2', '@'], ['3', '#'], ['4', '$'], ['5', '%'], ['6', '^'], ['7', '&'], ['8', '*'], ['9', '('], ['0', ')'], ['_', '-'], ['=', '+'], ['delete']],
@@ -19,8 +19,8 @@ const keysWidths: any = {
   ' ': 'auto',
 };
 
-export default class extends Is.Elements.Canvas {
-  keys: Record<string, Key>;
+export class ElementKeyboard extends Is.Elements.Canvas {
+  keys: Record<string, ShapeKey>;
   constructor(name: string, size: Is.Size, style?: Is.Styles, scale?: number, canvasStyles?: Is.CanvasStyles) {
     super(name, size, style, undefined, scale);
     this.keys = {};
@@ -67,7 +67,7 @@ export default class extends Is.Elements.Canvas {
           yy = y + 4 + itWidth / 2;
         }
 
-        const key = new Key(values as any,
+        const key = new ShapeKey(values as any,
           i < row.length / 2 ? 'left' : 'right',
           {
             left: x,
@@ -84,7 +84,7 @@ export default class extends Is.Elements.Canvas {
 
         // add up key
         if (arrowIndex === 1) {
-          const up = new Key(keyValuesUp as any,
+          const up = new ShapeKey(keyValuesUp as any,
             'right',
             {
               left: x,
@@ -105,14 +105,10 @@ export default class extends Is.Elements.Canvas {
   }
   shine(key: string) {
     const k = this.keys[key] || this.keys[key.toUpperCase()];
-    this.remove(k.name);
-    this.add(k);
     k.shine(3000);
   }
   zoom(key: string) {
     const k = this.keys[key] || this.keys[key.toUpperCase()];
-    this.remove(k.name);
-    this.add(k);
     k.zoom(3000, { x: this.size.width / 2, y: this.size.height / 2 }, 4);
   }
 }

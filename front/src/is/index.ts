@@ -1,5 +1,3 @@
-import number from "../isassets/elements/number";
-
 const H5Image = Image;
 
 /** interative script */
@@ -163,6 +161,7 @@ export namespace Is {
   export type Point = {
     x: number;
     y: number;
+    z?: number;
   };
 
   export type Size = {
@@ -187,8 +186,8 @@ export namespace Is {
 
   export class Element<T extends HTMLElement = HTMLElement> {
     dom: T;
-    constructor(tag: string, name: string, style?: Styles) {
-      this.dom = document.createElement(tag) as any as T;
+    constructor(tag: string, name: string, style?: Styles, ns?: string) {
+      this.dom = (ns ? document.createElementNS(ns, name) : document.createElement(tag)) as any as T;
       for (const [k, v] of Object.entries(style || {})) {
         (this.dom.style as any)[k] = v;
       }
@@ -360,15 +359,18 @@ export namespace Is {
             clones.push(it.clone());
           }
         }
+        const its = [];
         for (const it of Object.values(this.context)) {
           if (Array.isArray(it)) {
             for (const item of it) {
-              each(item);
+              its.push(item);
             }
           } else {
-            each(it);
+            its.push(it);
           }
         }
+        its.sort((a, b) => (a.position.z || 0) - (b.position.z || 0));
+        its.forEach(e => each(e));
         disappears.forEach(e => {
           delete this.context[e.name];
           e.destroyed?.call(e);
@@ -436,8 +438,10 @@ export namespace Is {
       const d = targetValue - startValue;
       if (currentTime <= h) {
         return startValue + (d * currentTime / h);
+      } if (currentTime >= duration) {
+        return startValue;
       } if (currentTime >= 7 * h) {
-        return targetValue - (d * (duration - currentTime) / h);
+        return startValue + (d * (duration - currentTime) / h);
       }
       return targetValue;
     }

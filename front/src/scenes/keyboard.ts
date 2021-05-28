@@ -1,10 +1,10 @@
 import { Is } from '../is/index';
 import { rpc } from '../rpc';
 import { options } from '../store';
-import Keyboard from '../isassets/elements/keyboard';
+import { ElementKeyboard } from '../isassets/elements/keyboard';
 
 export default class Numbers extends Is.Program {
-  keyboard: Keyboard;
+  keyboard: ElementKeyboard;
   constructor(screen: Is.Screen) {
     super({
       num: {
@@ -23,7 +23,7 @@ export default class Numbers extends Is.Program {
     const height = width / 2;
     const scale = width / 1600;
 
-    this.keyboard = new Keyboard('keyboard', {
+    this.keyboard = new ElementKeyboard('keyboard', {
       width: 1600,
       height: 800,
     }, {

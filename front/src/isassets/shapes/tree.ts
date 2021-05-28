@@ -1,3 +1,14 @@
+import { Is } from '../../is/index';
+
+export class ShapeTree extends Is.Shape {
+  size: Is.Size;
+  constructor(name: string, rect: Is.Rect, style?: Is.CanvasStyles) {
+    super(name, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, style);
+    this.size = size;
+    this.dom.setAttribute('viewBox', `0 0 ${size.width} ${size.height}`);
+  }
+}
+
 // Based on the stem generator in Flash Math Creativity
 
 class EventManager {

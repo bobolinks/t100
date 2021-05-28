@@ -13,7 +13,7 @@ const colors = [
   'blue'
 ];
 
-export default class extends Is.Element<HTMLDivElement> {
+export class ElementNumber extends Is.Element<HTMLDivElement> {
   constructor(name: string, value: number, style?: Is.Styles) {
     super('div', name, style);
     this.setValue(value);

@@ -1,6 +1,6 @@
 import { Is } from '../../is/index';
 
-export class Key extends Is.Shape {
+export class ShapeKey extends Is.Shape {
   size: Is.Size;
   values: [string, string?];
   side: 'left' | 'right';
@@ -21,6 +21,7 @@ export class Key extends Is.Shape {
     ctx.shadowBlur = 4;
 
     if (this.animating) {
+      this.position.z = 1;
       const eslapsed = now - (this.animatingBegin || now);
       const left = (this.animatingPeriod || 0) - eslapsed;
       if (left > 0) {
@@ -37,6 +38,7 @@ export class Key extends Is.Shape {
           ctx.scale(scale, scale);
         }
       } else {
+        this.position.z = 0;
         this.animating = undefined;
       }
     }
