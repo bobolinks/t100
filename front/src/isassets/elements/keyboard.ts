@@ -105,10 +105,10 @@ export class ElementKeyboard extends Is.Elements.Canvas {
   }
   shine(key: string) {
     const k = this.keys[key] || this.keys[key.toUpperCase()];
-    k.shine(3000);
+    k?.shine(1000);
   }
   zoom(key: string) {
     const k = this.keys[key] || this.keys[key.toUpperCase()];
-    k.zoom(3000, { x: this.size.width / 2, y: this.size.height / 2 }, 4);
+    k?.zoom(3000, { x: this.size.width / 2, y: this.size.height / 2 }, 4);
   }
 }

@@ -3,8 +3,8 @@ import { rpc } from '../rpc';
 import { options } from '../store';
 
 export default class extends Is.Program {
-  constructor(script: Is.Script, screen: Is.Screen) {
-    super(script, screen);
+  constructor(name: string, script: Is.Script, screen: Is.Screen) {
+    super(name, script, screen);
     screen.setupExpectedSize(options.screen);
     screen.addElement(new Is.Elements.Rectangle("show",
       {

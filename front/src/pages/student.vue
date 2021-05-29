@@ -3,11 +3,11 @@
     <div class="main" style="display: flex; flex: 1 1 auto; flex-direction: column">
       <div class="toolbar" style="display: flex; flex: 0 1 auto; flex-direction: row">
         <div style="align-items: center; display: flex; flex: 1 1 auto; flex-direction: row; justify-content: flex-start">
-          <i class="icon-light" style="font-size: 1.2em; margin-right: 0.2em"></i>
-          <label>{{ tip }}</label>
+          <i class="icon-pane" style="font-size: 1.2em; margin-right: 0.2em; color: white !important"></i>
+          <label>{{ title }}</label>
         </div>
         <div class="baritems" style="flex: 0 0 none; justify-content: center">
-          <label>{{ tip }}</label>
+          <!-- <label>{{ tip }}</label> -->
         </div>
         <div class="baritems" style="flex: 1 1 auto; justify-content: flex-end">
           <!-- <i class="icon-options"></i> -->
@@ -27,7 +27,7 @@
           <span class="input-item sugestion">{{ inputSugestion }}</span>
           <div style="align-items: center; display: flex; flex-direction: row">
             <i class="icon-edit" style="flex: 0 0 0%; margin: 0 0.4em"></i>
-            <input class="input-item" id="cmd-txt" type="text" placeholder="在这里输入命令哦" @keyup="onkey" style="flex: 1 1 auto" />
+            <input class="input-item" id="cmd-txt" type="text" :placeholder="tip" @keyup="onkey" style="flex: 1 1 auto" />
           </div>
         </form>
       </div>
@@ -42,7 +42,8 @@ export default {
   data() {
     return {
       inputSugestion: '...',
-      tip: 'tip',
+      title: 'title',
+      tip: '在这里输入命令哦',
       scripts: [
         {
           time: new Date(),
@@ -85,7 +86,8 @@ export default {
             content: `Start succesfully!`,
             time: new Date(),
           });
-          this.startScene(NorDic.decode(e));
+          this.title = e.name;
+          this.startScene(NorDic.decode(e.patterns));
         });
       } else if (!this.term) {
         return;
@@ -104,12 +106,29 @@ export default {
     },
     onkey(e) {
       if (this.term) {
-        const rs = this.term.input($('#cmd-txt').value);
+        const cmdline = $('#cmd-txt').value;
+        const rs = this.term.input(cmdline);
         this.inputSugestion = rs.sugesstions?.length ? rs.sugesstions[0] : '...';
+        if (rs.sugesstions?.length) {
+          this.$rpc.request('relay.input', 'scene.input', e.keyCode, cmdline).then((e) => {});
+        }
       }
     },
     startScene(patterns) {
-      this.term = new Is.Ternimator(patterns, (name, args) => {
+      if (this.term) {
+        this.$rpc.undescribe(this.term);
+      }
+      this.$rpc.undescribe(this);
+      this.$rpc.describe(
+        'scene.tip',
+        (e) => {
+          // InputTip
+          this.tip = e.tip;
+          this.term.limit(e.pattern);
+        },
+        this,
+      );
+      this.term = new Is.Terminator(patterns, (name, args) => {
         this.$rpc.request('relay.input', 'scene.execute', name, args).then((e) => {
           if (e) {
             this.scripts.push({
@@ -252,6 +271,7 @@ export default {
 }
 
 .input-form .input-item {
+  font-family: sans-serif !important;
   border: none;
   outline: none;
   display: inline-block;

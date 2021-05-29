@@ -6,7 +6,7 @@ import { options } from '../store';
 
 export default class Numbers extends ShowBase {
   constructor(screen: Is.Screen) {
-    super({
+    super('魔法数字', {
       num: {
         matchers: [
           'set number to ',

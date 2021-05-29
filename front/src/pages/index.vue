@@ -36,19 +36,26 @@ export default {
         this.$rpc.undescribe(this.scene);
         this.scene.dispose();
       }
+      this.$rpc.undescribe(this);
+
       const Scene = Scenes[name];
       this.scene = new Scene($('#scene'));
       this.scene.launch('');
 
-      this.$rpc.undescribe(this);
       this.$rpc.describe('scene.start', this.startScene, this);
+      this.$rpc.describe('scene.input', this.scene.input, this.scene);
       this.$rpc.describe('scene.execute', this.scene.execute, this.scene);
       this.$rpc.describe('scene.stop', () => {
         this.$rpc.undescribe(this);
         this.$rpc.describe('scene.start', this.startScene, this);
       });
 
-      return NorDic.encode(this.scene.patterns());
+      document.title = this.scene.name;
+
+      return {
+        name: this.scene.name,
+        patterns: NorDic.encode(this.scene.patterns()),
+      };
     },
   },
   mounted() {

@@ -3,7 +3,7 @@ import { rpc } from '../rpc';
 
 export default class MulTable extends Is.Program {
   constructor(screen: Is.Screen) {
-    super({
+    super('乘法表', {
     }, screen);
   }
 };

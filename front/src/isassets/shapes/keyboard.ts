@@ -19,6 +19,7 @@ export class ShapeKey extends Is.Shape {
     // Shadow
     ctx.shadowColor = 'gray';
     ctx.shadowBlur = 4;
+    ctx.fillStyle = '#f8f8f8';
 
     if (this.animating) {
       this.position.z = 1;
@@ -27,9 +28,7 @@ export class ShapeKey extends Is.Shape {
       if (left > 0) {
         if (this.animating === 'shining') {
           const percent = Is.AnimationFunctions.easeInOutQuad(eslapsed, 0, 1, this.animatingPeriod || 0);
-          // Shadow
-          ctx.shadowColor = 'red';
-          ctx.shadowBlur = 4 * percent;
+          ctx.fillStyle = `rgba(255, 88, 88, ${1 - percent})`;
         } else {
           const x = Is.AnimationFunctions.easeInOuth3h(eslapsed, this.position.x, this.animatingTarget?.x || this.position.x, this.animatingPeriod || 0);
           const y = Is.AnimationFunctions.easeInOuth3h(eslapsed, this.position.y, this.animatingTarget?.y || this.position.y, this.animatingPeriod || 0);
@@ -43,7 +42,6 @@ export class ShapeKey extends Is.Shape {
       }
     }
 
-    ctx.fillStyle = '#f8f8f8';
     ctx.strokeStyle = '#e2e2e2';
     ctx.lineWidth = 1;
     Is.Elements.Canvas.roundRect(ctx, -this.size.width / 2, -this.size.height / 2, this.size.width, this.size.height, this.size.height * 0.1, true, true);

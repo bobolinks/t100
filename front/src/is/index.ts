@@ -16,6 +16,7 @@ export namespace Is {
 
   /** runtime context */
   export interface ScriptContext {
+    app: any;
     [key: string]: any;
   }
 
@@ -66,6 +67,11 @@ export namespace Is {
     }
     return pats;
   }
+  export type InputTip = {
+    tip: string;
+    pattern: string;
+  };
+
 
   /**
    *******************************
@@ -79,9 +85,11 @@ export namespace Is {
     };
   };
 
-  export class Ternimator {
+  export class Terminator {
     private patterns: Patterns;
     private commit: FnCommit;
+    // current matching
+    private matching?: string;
     constructor(patterns: Patterns, commit: FnCommit) {
       this.patterns = patterns;
       this.commit = commit;
@@ -96,6 +104,9 @@ export namespace Is {
         vars: []
       };
       for (const [name, it] of Object.entries(this.patterns)) {
+        if (this.matching && this.matching !== name) {
+          continue;
+        }
         let token = line;
         let failed = false;
         const vars = [];
@@ -150,8 +161,13 @@ export namespace Is {
       if (!rs.matched) {
         return false;
       }
+      this.matching = undefined;
       this.commit(rs.matched.name, rs.matched.vars);
       return true;
+    }
+    // set next pattern for matching
+    limit(name: string) {
+      this.matching = name;
     }
   }
 
@@ -255,6 +271,7 @@ export namespace Is {
     }
 
     interface CanvasContext extends ScriptContext {
+      app: any;
       [key: string]: Shape | Array<Shape>;
     };
     export class Canvas extends Element<HTMLCanvasElement> {
@@ -278,7 +295,7 @@ export namespace Is {
           last: now,
         };
         this.acceleration = acceleration || { y: -9.8, x: 0 };
-        this.context = {};
+        this.context = { app: null as any };
         this.scale = scale || 1;
       }
       add(shape: Shape) {
@@ -360,7 +377,8 @@ export namespace Is {
           }
         }
         const its = [];
-        for (const it of Object.values(this.context)) {
+        for (const [name, it] of Object.entries(this.context)) {
+          if (name === 'app') continue;
           if (Array.isArray(it)) {
             for (const item of it) {
               its.push(item);
@@ -459,7 +477,7 @@ export namespace Is {
     constructor() {
       super();
       this.shadow = this.attachShadow({ mode: 'open' });
-      this.context = {};
+      this.context = { app: null as any };
       this.body = document.createElement('body');
       this.shadow.appendChild(this.body);
       new ResizeObserver(() => {
@@ -508,7 +526,8 @@ export namespace Is {
     }
     cleanup() {
       this.body.childNodes.forEach(e => this.body.removeChild(e));
-      this.context = {};
+      const app = this.context.app;
+      this.context = { app };
     }
   };
 
@@ -522,11 +541,14 @@ export namespace Is {
     screen: Screen;
     rendering: boolean;
     context: ScriptContext;
-    constructor(script: Script, screen: Screen, context?: ScriptContext) {
+    name: string;
+    constructor(name: string, script: Script, screen: Screen, context?: ScriptContext) {
       this.screen = screen;
       this.script = {};
       this.rendering = false;
       this.context = context || screen.context;
+      this.name = name;
+      this.context.app = this as any;
       for (const [name, it] of Object.entries(script)) {
         const args = matchers(it).filter(e => typeof e !== 'string').map(e => (e as Matcher).name);
         this.script[name] = Object.assign({}, it, {
@@ -566,6 +588,7 @@ export namespace Is {
         window.requestAnimationFrame(step);
       }
     }
+    input?(charCode: number, line: string): any;
     execute(name: string, args: any[]): any {
       const node = this.script[name];
       if (!node) {
