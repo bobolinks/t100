@@ -329,9 +329,8 @@ export namespace Is {
       context: CanvasContext;
       gravity: Vector = new Vector(0, 9.8, 0);
       force: Vector = new Vector();
-      scale: number;
       size: Size;
-      constructor(name: string, size: Size, scale?: number, style?: Styles, canvasStyles?: Is.CanvasStyles) {
+      constructor(name: string, size: Size, style?: Styles, canvasStyles?: Is.CanvasStyles) {
         super('canvas', name, style);
         this.size = size;
         this.dom.setAttribute('width', size.width.toString());
@@ -343,7 +342,6 @@ export namespace Is {
           last: now,
         };
         this.context = { app: null as any };
-        this.scale = scale || 1;
 
         const cxt = this.dom.getContext('2d');
         if (cxt && canvasStyles) {
@@ -413,7 +411,7 @@ export namespace Is {
           }
           ctx.save();
           // reset matrix with user's scale value and position
-          ctx.setTransform(this.scale, 0, 0, this.scale, it.position.x, it.position.y);
+          ctx.setTransform(1, 0, 0, 1, it.position.x, it.position.y);
           for (const [key, value] of Object.entries(it.styles || {})) {
             (ctx as any)[key] = value;
           }

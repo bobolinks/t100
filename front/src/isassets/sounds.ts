@@ -1,24 +1,31 @@
 export default {
-  items: {} as Record<string, HTMLAudioElement>,
-  play(name: string) {
+  items: {} as Record<string, {
+    repeat?: boolean;
+    audio: HTMLAudioElement
+  }>,
+  play(name: string, repeat?: boolean) {
     let it = this.items[name];
     if (it) {
       return it;
     }
-    it = new Audio(`assets/audio/${name}.mp3`);
+    it = { repeat, audio: new Audio(`assets/audio/${name}.mp3`) };
     this.items[name] = it;
-    it.addEventListener('ended', () => {
-      delete this.items[name];
+    it.audio.addEventListener('ended', () => {
+      if (it.repeat) {
+        it.audio.play();
+      } else {
+        delete this.items[name];
+      }
     });
-    it.addEventListener('error', () => {
+    it.audio.addEventListener('error', () => {
       delete this.items[name];
     })
-    it.play();
+    it.audio.play();
   },
   stop(name: string) {
     let it = this.items[name];
     if (it) {
-      it.pause();
+      it.audio.pause();
       delete this.items[name];
     }
   }

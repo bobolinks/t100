@@ -3,7 +3,6 @@ import { rpc } from '../rpc';
 import { options } from '../store';
 import { ElementKeyboard } from '../isassets/elements/keyboard';;
 import Sounds from '../isassets/sounds';
-import { Identity } from '@tensorflow/tfjs-core';
 
 const inputLines = [
   'I am lanwan.',
@@ -43,13 +42,12 @@ export default class SceneKeyboard extends Is.Program {
     }, screen);
     screen.setupExpectedSize(options.screen);
 
-    const width = options.screen.width * 0.8;
+    const width = options.screen.width;
     const height = width / 2;
-    const scale = width / 1600;
 
     this.title = new Is.Elements.Text('title', '用魔法键盘拼写一个单词，会有惊喜哦！', {
       left: `0px`,
-      top: `20px`,
+      top: `30px`,
       height: `60px`,
       lineHeight: `60px`,
       width: `100%`,
@@ -75,7 +73,7 @@ export default class SceneKeyboard extends Is.Program {
     this.keyboard = new ElementKeyboard('keyboard', {
       width: 1600,
       height: 800,
-    }, scale, {
+    }, {
       left: `0`,
       top: `0`,
       height: `100%`,
@@ -126,15 +124,15 @@ export default class SceneKeyboard extends Is.Program {
     this.keyboard.shine(inputLines[this.game.line].charAt(this.game.offset));
   }
   sound(name: string) {
-    Sounds.play(name);
+    Sounds.play(name, name === 'wind');
   }
   wind(direction: string) {
     if (direction === 'left') {
-      this.keyboard.force.add(new Is.Vector(-0.01));
-      Sounds.play('wind');
+      this.keyboard.force.add(new Is.Vector(-0.002));
+      Sounds.play('wind', true);
     } else if (direction === 'right') {
-      this.keyboard.force.add(new Is.Vector(0.01));
-      Sounds.play('wind');
+      this.keyboard.force.add(new Is.Vector(0.002));
+      Sounds.play('wind', true);
     } else if (direction === 'stop') {
       this.keyboard.force = new Is.Vector();
       Sounds.stop('wind');

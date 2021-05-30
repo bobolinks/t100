@@ -28,8 +28,8 @@ function randomWithRange(Min: number, Max: number) {
 
 export class ElementKeyboard extends Is.Elements.Canvas {
   keys: Record<string, ShapeKey>;
-  constructor(name: string, size: Is.Size, scale?: number, style?: Is.Styles, canvasStyles?: Is.CanvasStyles) {
-    super(name, size, scale, style, canvasStyles);
+  constructor(name: string, size: Is.Size, style?: Is.Styles, canvasStyles?: Is.CanvasStyles) {
+    super(name, size, style, canvasStyles);
     this.keys = {};
 
     const padding = 8;
