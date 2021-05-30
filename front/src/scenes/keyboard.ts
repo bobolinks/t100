@@ -14,6 +14,7 @@ export default class SceneKeyboard extends Is.Program {
   keyboard: ElementKeyboard;
   title: Is.Elements.Text;
   text: Is.Elements.Text;
+  rdmTimer: any;
   game: {
     line: number;
     offset: number;
@@ -35,7 +36,7 @@ export default class SceneKeyboard extends Is.Program {
           {
             name: 'direction',
             label: '风的方向',
-            exp: /left|right|stop/,
+            exp: /left|right|random|stop/,
           }],
         code: `app.wind(direction)`
       },
@@ -57,11 +58,9 @@ export default class SceneKeyboard extends Is.Program {
     });
     screen.addElement(this.title);
 
-    const kbBottom = height + (options.screen.height / 2 - height / 2);
-
     this.text = new Is.Elements.Text('text', '', {
       left: `0px`,
-      top: `${kbBottom + 10}px`,
+      bottom: `30px`,
       height: `60px`,
       lineHeight: `60px`,
       width: `100%`,
@@ -133,9 +132,21 @@ export default class SceneKeyboard extends Is.Program {
     } else if (direction === 'right') {
       this.keyboard.force.add(new Is.Vector(0.002));
       Sounds.play('wind', true);
+    } else if (direction === 'random') {
+      Sounds.play('wind', true);
+      if (!this.rdmTimer) {
+        this.rdmTimer = setInterval(() => {
+          const direct = 10 - (Math.ceil(Math.random() * 1000) % 20);
+          this.keyboard.force.add(new Is.Vector(direct * 0.0005));
+        }, 3000);
+      }
     } else if (direction === 'stop') {
       this.keyboard.force = new Is.Vector();
       Sounds.stop('wind');
+      if (this.rdmTimer) {
+        clearInterval(this.rdmTimer);
+        this.rdmTimer = undefined;
+      }
     }
   }
   updateFrame(timestamp: number) {
