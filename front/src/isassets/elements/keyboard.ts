@@ -1,5 +1,6 @@
 import { Is } from '../../is/index';
 import { ShapeKey } from '../shapes/keyboard';
+import { ShapeBalloon } from '../shapes/balloon';
 
 const keysLayout = [
   [['`', '~'], ['1', '!'], ['2', '@'], ['3', '#'], ['4', '$'], ['5', '%'], ['6', '^'], ['7', '&'], ['8', '*'], ['9', '('], ['0', ')'], ['_', '-'], ['=', '+'], ['delete']],
@@ -19,18 +20,17 @@ const keysWidths: any = {
   ' ': 'auto',
 };
 
+function randomWithRange(Min: number, Max: number) {
+  var Range = Max - Min;
+  var Rand = Math.random();
+  return (Min + Math.round(Rand * Range));
+}
+
 export class ElementKeyboard extends Is.Elements.Canvas {
   keys: Record<string, ShapeKey>;
-  constructor(name: string, size: Is.Size, style?: Is.Styles, scale?: number, canvasStyles?: Is.CanvasStyles) {
-    super(name, size, style, undefined, scale);
+  constructor(name: string, size: Is.Size, scale?: number, style?: Is.Styles, canvasStyles?: Is.CanvasStyles) {
+    super(name, size, scale, style, canvasStyles);
     this.keys = {};
-
-    const cxt = this.dom.getContext('2d');
-    if (cxt && canvasStyles) {
-      for (const [k, v] of Object.entries(canvasStyles)) {
-        (cxt as any)[k] = v;
-      }
-    }
 
     const padding = 8;
     const gapping = 12;
@@ -105,7 +105,10 @@ export class ElementKeyboard extends Is.Elements.Canvas {
   }
   shine(key: string) {
     const k = this.keys[key] || this.keys[key.toUpperCase()];
-    k?.shine(1000);
+    if (k) {
+      k.shine(1000);
+      this.add(new ShapeBalloon(`balloon-${key}`, 30, randomWithRange(1, 255), new Is.Vector(k.position.x, k.position.y, 2)));
+    }
   }
   zoom(key: string) {
     const k = this.keys[key] || this.keys[key.toUpperCase()];

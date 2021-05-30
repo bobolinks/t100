@@ -10,7 +10,7 @@ export class ShapeKey extends Is.Shape {
   animatingTarget?: Is.Point;
   animatingScale?: number;
   constructor(values: [string, string?], side: 'left' | 'right', rect: Is.Rect, styles?: Is.CanvasStyles) {
-    super(values[0], { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, styles);
+    super(values[0], new Is.Vector(rect.left + rect.width / 2, rect.top + rect.height / 2), styles);
     this.values = values;
     this.size = { width: rect.width, height: rect.height };
     this.side = side;

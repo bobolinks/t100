@@ -177,8 +177,48 @@ export namespace Is {
   export type Point = {
     x: number;
     y: number;
-    z?: number;
   };
+
+  export class Vector {
+    x: number;
+    y: number;
+    z: number;
+    constructor(x?: number, y?: number, z?: number) {
+      this.x = x || 0;
+      this.y = y || 0;
+      this.z = z || 0;
+    }
+    static from(point: Point) {
+      return new Vector(point.x, point.y);
+    }
+    add(v: number | Vector) {
+      if (typeof v === 'number') {
+        this.x += v;
+        this.y += v;
+        this.z += v;
+      } else {
+        this.x += v.x;
+        this.y += v.y;
+        this.z += v.z;
+      }
+      return this;
+    }
+    mul(v: number) {
+      this.x *= v;
+      this.y *= v;
+      this.z *= v;
+      return this;
+    }
+    div(v: number) {
+      this.x /= v;
+      this.y /= v;
+      this.z /= v;
+      return this;
+    }
+    clone() {
+      return new Vector(this.x, this.y, this.z);
+    }
+  }
 
   export type Size = {
     width: number;
@@ -217,18 +257,25 @@ export namespace Is {
     strokeStyle?: string | CanvasGradient | CanvasPattern;
   }
 
+  export type Physics = {
+    /** 1kg */
+    quality: number;
+    /** 1n */
+    force: Vector;
+    /** {x,y,z} */
+    velocity: Vector;
+  };
+
   export class Shape {
     name: string;
-    position: Point;
-    quality?: boolean;
-    velocity?: Point;
+    position: Vector;
     styles?: CanvasStyles;
-    constructor(name: string, position: Point, styles?: CanvasStyles, quality?: boolean, velocity?: Point) {
+    physics?: Physics;
+    constructor(name: string, position: Vector, styles?: CanvasStyles, physics?: Physics) {
       this.name = name;
-      this.position = position;
+      this.position = position.clone();
       this.styles = styles;
-      this.quality = quality;
-      this.velocity = velocity;
+      this.physics = physics;
     }
     render(ctx: CanvasRenderingContext2D, delta: number, now?: number): RenderResult {
       return RenderResult.none;
@@ -280,10 +327,11 @@ export namespace Is {
         last: number;
       };
       context: CanvasContext;
-      acceleration: Point;
+      gravity: Vector = new Vector(0, 9.8, 0);
+      force: Vector = new Vector();
       scale: number;
       size: Size;
-      constructor(name: string, size: Size, style?: Styles, acceleration?: Point, scale?: number) {
+      constructor(name: string, size: Size, scale?: number, style?: Styles, canvasStyles?: Is.CanvasStyles) {
         super('canvas', name, style);
         this.size = size;
         this.dom.setAttribute('width', size.width.toString());
@@ -294,9 +342,15 @@ export namespace Is {
           begin: now,
           last: now,
         };
-        this.acceleration = acceleration || { y: -9.8, x: 0 };
         this.context = { app: null as any };
         this.scale = scale || 1;
+
+        const cxt = this.dom.getContext('2d');
+        if (cxt && canvasStyles) {
+          for (const [k, v] of Object.entries(canvasStyles)) {
+            (cxt as any)[k] = v;
+          }
+        }
       }
       add(shape: Shape) {
         if (!this.context[shape.name]) {
@@ -351,17 +405,15 @@ export namespace Is {
         const disappears: Array<Shape> = [];
         const clones: Array<Shape> = [];
         const each = (it: Shape) => {
-          if (it.quality && it.velocity) {
-            const deltaX = it.velocity.x * delta + this.acceleration.x * Math.pow(delta, 2) / 2;
-            const deltaY = it.velocity.y * delta + this.acceleration.y * Math.pow(delta, 2) / 2;
-            it.velocity.x += this.acceleration.x * delta;
-            it.velocity.y += this.acceleration.y * delta;
-            it.position.x += deltaX;
-            it.position.y += deltaY;
+          if (it.physics) {
+            const a = this.force.clone().add(it.physics.force).div(it.physics.quality).add(this.gravity);
+            const vd = a.mul(delta);
+            it.physics.velocity.add(vd);
+            it.position.add(it.physics.velocity.clone().div(2 * delta));
           }
+          ctx.save();
           // reset matrix with user's scale value and position
           ctx.setTransform(this.scale, 0, 0, this.scale, it.position.x, it.position.y);
-          ctx.save();
           for (const [key, value] of Object.entries(it.styles || {})) {
             (ctx as any)[key] = value;
           }
@@ -390,7 +442,7 @@ export namespace Is {
         its.sort((a, b) => (a.position.z || 0) - (b.position.z || 0));
         its.forEach(e => each(e));
         disappears.forEach(e => {
-          delete this.context[e.name];
+          this.remove(e.name, e);
           e.destroyed?.call(e);
         });
         clones.forEach(e => this.add(e));
@@ -620,7 +672,7 @@ function matcherToString(matcher: string | Is.Matcher) {
   if (typeof matcher === 'string') {
     return matcher;
   } else {
-    return `\${${(matcher as Is.Matcher).name}=${(matcher as Is.Matcher).label}}`;
+    return `\${${(matcher as Is.Matcher).label}=${(matcher as Is.Matcher).exp.source}}`;
   }
 }
 

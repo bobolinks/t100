@@ -9,7 +9,7 @@ export class ShapeText extends Is.Shape {
     begin: number;
   };
   constructor(name: string, text: string, rect: Is.Rect, styles?: Is.CanvasStyles) {
-    super(name, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, styles);
+    super(name, new Is.Vector(rect.left + rect.width / 2, rect.top + rect.height / 2), styles);
     this.text = text;
     this.size = { width: rect.width, height: rect.height };
   }

@@ -3,6 +3,7 @@ import { rpc } from '../rpc';
 import { options } from '../store';
 import { ElementKeyboard } from '../isassets/elements/keyboard';;
 import Sounds from '../isassets/sounds';
+import { Identity } from '@tensorflow/tfjs-core';
 
 const inputLines = [
   'I am lanwan.',
@@ -20,15 +21,6 @@ export default class SceneKeyboard extends Is.Program {
   };
   constructor(screen: Is.Screen) {
     super('魔法键盘', {
-      char: {
-        matchers: [
-          {
-            name: 'char',
-            label: '一个字符',
-            exp: /./,
-          }],
-        code: `if (app.check(char)) { keyboard.zoom(char); app.step(); } else { app.error(char); }`
-      },
       word: {
         matchers: [
           {
@@ -38,6 +30,16 @@ export default class SceneKeyboard extends Is.Program {
           }],
         code: `app.sound(word)`
       },
+      wind: {
+        matchers: [
+          'wind ',
+          {
+            name: 'direction',
+            label: '风的方向',
+            exp: /left|right|stop/,
+          }],
+        code: `app.wind(direction)`
+      },
     }, screen);
     screen.setupExpectedSize(options.screen);
 
@@ -45,7 +47,7 @@ export default class SceneKeyboard extends Is.Program {
     const height = width / 2;
     const scale = width / 1600;
 
-    this.title = new Is.Elements.Text('title', '要用魔法键盘拼写一个单词，会有惊喜哦', {
+    this.title = new Is.Elements.Text('title', '用魔法键盘拼写一个单词，会有惊喜哦！', {
       left: `0px`,
       top: `20px`,
       height: `60px`,
@@ -53,6 +55,7 @@ export default class SceneKeyboard extends Is.Program {
       width: `100%`,
       textAlign: 'center',
       fontSize: '60px',
+      color: 'blueviolet',
     });
     screen.addElement(this.title);
 
@@ -72,12 +75,12 @@ export default class SceneKeyboard extends Is.Program {
     this.keyboard = new ElementKeyboard('keyboard', {
       width: 1600,
       height: 800,
-    }, {
-      left: `${options.screen.width * 0.1}px`,
-      top: `${options.screen.height / 2 - height / 2}px`,
-      height: `${height}px`,
-      width: `${width}px`,
     }, scale, {
+      left: `0`,
+      top: `0`,
+      height: `100%`,
+      width: `100%`,
+    }, {
       font: '200 20px sans-serif',
     });
     screen.addElement(this.keyboard);
@@ -95,11 +98,11 @@ export default class SceneKeyboard extends Is.Program {
     const char = String.fromCharCode(charCode);
     this.keyboard.shine(char);
     this.text.setText(line);
-    Sounds.paly('click');
+    Sounds.play('click');
   }
   execute(name: string, args: any[]): any {
     this.text.setText('');
-    Sounds.paly('enter');
+    Sounds.play('enter');
     return super.execute(name, args);
   }
   check(value: string) {
@@ -119,11 +122,23 @@ export default class SceneKeyboard extends Is.Program {
     }
   }
   error(value: string) {
-    Sounds.paly('en');
+    Sounds.play('en');
     this.keyboard.shine(inputLines[this.game.line].charAt(this.game.offset));
   }
   sound(name: string) {
-    Sounds.paly(name);
+    Sounds.play(name);
+  }
+  wind(direction: string) {
+    if (direction === 'left') {
+      this.keyboard.force.add(new Is.Vector(-0.01));
+      Sounds.play('wind');
+    } else if (direction === 'right') {
+      this.keyboard.force.add(new Is.Vector(0.01));
+      Sounds.play('wind');
+    } else if (direction === 'stop') {
+      this.keyboard.force = new Is.Vector();
+      Sounds.stop('wind');
+    }
   }
   updateFrame(timestamp: number) {
     this.keyboard.redraw();
